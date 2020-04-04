@@ -2,7 +2,7 @@
   "name": "vote-dapp-back",
   "version": "1.0.0",
   "description": "back of the vote-dapp project",
-  "main": "back.js",
+  "main": "src/back.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -4,6 +4,6 @@ RUN yarn install
 COPY . .
 CMD if [ $NODE_ENV = "development" ]; \
     then yarn global add nodemon; \
-    nodemon back.js; \
-    else node back.js; \
+    nodemon src/back.js; \
+    else node src/back.js; \
     fi
