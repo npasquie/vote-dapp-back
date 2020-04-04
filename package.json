@@ -1,0 +1,26 @@
+{
+  "name": "vote-dapp-back",
+  "version": "1.0.0",
+  "description": "back of the vote-dapp project",
+  "main": "back.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/npasquie/vote-dapp-back"
+  },
+  "author": "Nicolas Pasquier",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/npasquie/vote-dapp-back/issues"
+  },
+  "homepage": "https://github.com/npasquie/vote-dapp-back#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.9.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}
