@@ -4,6 +4,7 @@
   "description": "back of the vote-dapp project",
   "main": "src/back.js",
   "scripts": {
+    "start": "nodemon src/back.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
