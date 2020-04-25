@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 const express = require("express"); // imports do not work, we use require
+const bodyParser = require('body-parser');
+const addrs = require("email-addresses");
+const voteDappUtil = require(
+    "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
 
 const app  = express();
 const root = "vote-dapp-front/build/";
@@ -19,23 +23,20 @@ db.once('open', function() {
     let ballotName   = "";
     let ballotSchema = new mongoose.Schema({
         name: {
-            unique : true,
+            unique : true, // must stay this way
             required : true,
             type : String},
         address: {
-            unique : true,
-            required : true,
             type : String},
         images: [Buffer]
     });
     let Ballot = mongoose.model('Ballot', ballotSchema);
 
+    app.use(bodyParser.json());
     app.get('/', function (req, res)
     {
         res.sendFile("index.html",{root:root});
     }).get('/api/:ballotName',function (req, res){
-        // TODO : remove logs
-        console.log("okyo");
         ballotName = req.params.ballotName;
         Ballot.find({ name: ballotName }, (err, ballot) => {
             if (err) return console.error(err);
@@ -49,33 +50,41 @@ db.once('open', function() {
         accessedFile = req.originalUrl;
         if(!accessedFile.includes("..")) // for security
             res.sendFile(accessedFile,{root:root}, () => {
-                console.log(accessedFile);
                 // no callback set
             });
         else
             notFoundAnswer(req, res);
-    }).post('/api/new-ballot',function (req,res) {
+    }).post('/api/new-ballot',function (req,res) { // API part
         let receivedJson = req.body;
-        console.log(req);
         let _name        = receivedJson.name;
         let _mails       = receivedJson.mails;
         let _images      = receivedJson.images;
-        let errorOccurred = false;
 
         if (Buffer.byteLength(_name) <= 32){
             let newBallot = new Ballot({
-                name : _name,
-                address: {},
-                images: _images
+                name: _name
             });
+            let computedMails = addrs.parseAddressList(_mails);
+            let codes = [];
+            let voterCodeHashes = [];
+            let tempCode;
+
+            computedMails.forEach(() => {
+                // creating random codes ex: om5v3gorggk
+                tempCode = Math.random().toString(36).substring(2);
+                codes.push(tempCode);
+                voterCodeHashes.push(voteDappUtil.strToHash(tempCode));
+            });
+
             newBallot.save(function (err) {
                 if (err) {
                     res.status(422).send(err);
-                    errorOccurred = true;
+                    console.log("error in ballot saving :");
+                    console.log(err);
+                } else {
+                    res.status(200).json(voterCodeHashes);
                 }
             });
-            if (! errorOccurred)
-                res.status(200).send('OK');
         }
         else
             res.status(400).send('Bad request');
@@ -92,4 +101,8 @@ db.once('open', function() {
 function notFoundAnswer(req,res) {
     res.setHeader('Content-Type', 'text/plain');
     res.status(404).send('Error 404');
+}
+
+function handleError(error) {
+    console.log(error);
 }
