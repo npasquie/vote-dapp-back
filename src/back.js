@@ -13,7 +13,7 @@ const networkAccess = serverIsInProdMode ? env.MONGO_NAME : "localhost";
 
 mongoose.connect(`mongodb://${networkAccess}:
   ${env.MONGO_PORT}/${env.DB_NAME}`,
-    {useNewUrlParser: true, useUnifiedTopology: true},
+    {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true},
     () => {console.log("connection established")})
     .catch(error => handleError(error));
 let db = mongoose.connection;
