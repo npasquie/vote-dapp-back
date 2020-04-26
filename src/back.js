@@ -32,6 +32,14 @@ db.once('open', function() {
     });
     let Ballot = mongoose.model('Ballot', ballotSchema);
 
+    // used to store ballot info during ballot deployment
+    let temporaryStorage = {
+        name: null,
+        mails: null,
+        codes: null,
+        images: null
+    };
+
     app.use(bodyParser.json());
     app.get('/', function (req, res)
     {
@@ -54,7 +62,7 @@ db.once('open', function() {
             });
         else
             notFoundAnswer(req, res);
-    }).post('/api/new-ballot',function (req,res) { // API part
+    }).post('/api/new-ballot',function (req,res) {
         let receivedJson = req.body;
         let _name        = receivedJson.name;
         let _mails       = receivedJson.mails;
@@ -75,19 +83,38 @@ db.once('open', function() {
                 codes.push(tempCode);
                 voterCodeHashes.push(voteDappUtil.strToHash(tempCode));
             });
-
             newBallot.save(function (err) {
                 if (err) {
                     res.status(422).send(err);
                     console.log("error in ballot saving :");
                     console.log(err);
                 } else {
+                    // could use ES6 destructured assign here
+                    temporaryStorage.codes = codes;
+                    temporaryStorage.mails = computedMails;
+                    temporaryStorage.name = _name;
                     res.status(200).json(voterCodeHashes);
                 }
             });
         }
         else
             res.status(400).send('Bad request');
+    }).post('/api/set-ballot-address',function (req,res) {
+        const receivedJson = req.body;
+        const {name, address} = receivedJson;
+
+        if (name !== temporaryStorage.name){ // error
+            const errMsg = "error: there has been an interference" +
+                "in the ballot data exchange process"
+            res.status(422).send(errMsg);
+            console.log(errMsg);
+        } else { // right name
+            Ballot.find({name: name}).exec((err,ballot) => {
+                if (err) return console.error(err);
+                console.log(ballot[0]);
+            });
+            res.status(200).send("OK");
+        }
     }).use(function(req, res) // if no above path is recognized
     {
         notFoundAnswer(req,res);
