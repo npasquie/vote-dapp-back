@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const express = require("express"); // imports do not work, we use require
 const bodyParser = require('body-parser');
 const addrs = require("email-addresses");
+const nodemailer = require('nodemailer');
 const voteDappUtil = require(
     "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
 
@@ -10,6 +11,30 @@ const root = "vote-dapp-front/build/";
 const env = process.env;
 const serverIsInProdMode = env.NODE_ENV === "production";
 const networkAccess = serverIsInProdMode ? env.MONGO_NAME : "localhost";
+// changes to the config file are taken into account at server restart
+let mailConfig;
+try {
+    mailConfig = require("../config/mail");
+} catch {
+    console.log("mail config file not found, switching to default");
+    mailConfig = require("../config/mail-default");
+}
+const transporter = nodemailer.createTransport({
+    service: mailConfig.service,
+    host: mailConfig.host,
+    port: (mailConfig.port ? mailConfig.port : undefined),
+    secure: mailConfig.secure,
+    auth: (mailConfig.enableAuth ? mailConfig.auth : undefined),
+    tls: mailConfig.tls
+});
+
+// used to store ballot info during ballot deployment
+let temporaryStorage = {
+    name: null,
+    mails: null,
+    codes: null,
+    images: null
+};
 
 mongoose.connect(`mongodb://${networkAccess}:
   ${env.MONGO_PORT}/${env.DB_NAME}`,
@@ -31,14 +56,6 @@ db.once('open', function() {
         images: [Buffer]
     });
     let Ballot = mongoose.model('Ballot', ballotSchema);
-
-    // used to store ballot info during ballot deployment
-    let temporaryStorage = {
-        name: null,
-        mails: null,
-        codes: null,
-        images: null
-    };
 
     app.use(bodyParser.json());
     app.get('/', function (req, res)
@@ -99,19 +116,22 @@ db.once('open', function() {
         }
         else
             res.status(400).send('Bad request');
-    }).post('/api/set-ballot-address',function (req,res) {
+    })  // .post down here finalises ballot's creation process
+        .post('/api/set-ballot-address',function (req,res) {
         const receivedJson = req.body;
         const {name, address} = receivedJson;
 
         if (name !== temporaryStorage.name){ // error
             const errMsg = "error: there has been an interference" +
-                "in the ballot data exchange process"
+                "in the ballot data exchange process";
             res.status(422).send(errMsg);
             console.log(errMsg);
         } else { // right name
             Ballot.find({name: name}).exec((err,ballot) => {
                 if (err) return console.error(err);
-                console.log(ballot[0]);
+                ballot[0].address = address;
+                ballot[0].save(); // setting ballot's address
+                sendMails();
             });
             res.status(200).send("OK");
         }
@@ -128,6 +148,33 @@ db.once('open', function() {
 function notFoundAnswer(req,res) {
     res.setHeader('Content-Type', 'text/plain');
     res.status(404).send('Error 404');
+}
+
+function sendMails() {
+    let mailOptions;
+    let mailAddress;
+    console.log("mails :");
+    console.log(temporaryStorage.mails);
+    temporaryStorage.mails.forEach((mail,index) => {
+        mailAddress = mail.address;
+        mailOptions = {
+            to: mailAddress,
+            subject: mailConfig.message.subject,
+            html: `<p>Cher(e) ${mailAddress}</p>` +
+                mailConfig.message.html +
+                `<a>localhost:3000/vote` +
+                `?code=${temporaryStorage.codes[index]}</a>`,
+            text: `Cher(e) ${mail.parts.name} \n` + mailConfig.message.text +
+                `\n localhost:3000/vote?code=${temporaryStorage.codes[index]}`
+        };
+        transporter.sendMail(mailOptions, (error,info) => {
+            if (error)
+                handleError("error from sendMail " +
+                    `on ${mailAddress}` + error);
+            else
+                console.log("mail sent: " + info.response);
+        });
+    });
 }
 
 function handleError(error) {

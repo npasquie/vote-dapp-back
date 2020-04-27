@@ -1,0 +1,21 @@
+{
+  "host": "localhost",
+  "service": null,
+  "port": null,
+  "secure": true,
+  "enableAuth": false,
+  "tls": {
+    "rejectUnauthorized": false
+  },
+  "auth": {
+    "type": "login",
+    "user": "admin",
+    "pass": "password"
+  },
+  "message": {
+    "from": "sender@domain.ext",
+    "subject": "vote-dapp invites you to a vote",
+    "html": "<p>use following link to vote</p>",
+    "text": "use following link to vote"
+  }
+}

@@ -2,3 +2,4 @@
 /.idea/
 /vote-dapp-front/
 .DS_Store
+/config/mail.json
