@@ -61,14 +61,14 @@ db.once('open', function() {
     app.get('/', function (req, res)
     {
         res.sendFile("index.html",{root:root});
-    }).get('/api/:ballotName',function (req, res){
+    }).get('/api/get-address/:ballotName',function (req, res){
         ballotName = req.params.ballotName;
         Ballot.find({ name: ballotName }, (err, ballot) => {
             if (err) return console.error(err);
             if(ballot.length === 0)
                 notFoundAnswer(req,res);
             else
-                res.json(ballot); // send in json
+                res.status(200).json(ballot.address); // send in json
         });
     }).get('/*', function (req, res)
     {
@@ -131,7 +131,7 @@ db.once('open', function() {
                 if (err) return console.error(err);
                 ballot[0].address = address;
                 ballot[0].save(); // setting ballot's address
-                sendMails();
+                sendMails(name);
             });
             res.status(200).send("OK");
         }
@@ -150,7 +150,7 @@ function notFoundAnswer(req,res) {
     res.status(404).send('Error 404');
 }
 
-function sendMails() {
+function sendMails(ballotName) {
     let mailOptions;
     let mailAddress;
     console.log("mails :");
@@ -165,7 +165,8 @@ function sendMails() {
                 `<a>localhost:3000/vote` +
                 `?code=${temporaryStorage.codes[index]}</a>`,
             text: `Cher(e) ${mail.parts.name} \n` + mailConfig.message.text +
-                `\n localhost:3000/vote?code=${temporaryStorage.codes[index]}`
+                `\n localhost:3000/vote?code=${temporaryStorage.codes[index]}`+
+                `name=${ballotName}`
         };
         transporter.sendMail(mailOptions, (error,info) => {
             if (error)
