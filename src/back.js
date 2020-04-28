@@ -3,9 +3,9 @@ const express = require("express"); // imports do not work, we use require
 const bodyParser = require('body-parser');
 const addrs = require("email-addresses");
 const nodemailer = require('nodemailer');
+const ip = require('ip');
 const voteDappUtil = require(
     "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
-
 const app  = express();
 const root = "vote-dapp-front/build/";
 const env = process.env;
@@ -153,11 +153,15 @@ function notFoundAnswer(req,res) {
 function sendMails(ballotName) {
     let mailOptions;
     let mailAddress;
-    let codeUri = encodeURIComponent(temporaryStorage.codes[index]);
+    let codeUri;
+    let link;
     let nameUri = encodeURIComponent(ballotName);
-    let link = `localhost:3000/vote?code=${codeUri}name=${nameUri}`;
+    let localAddress = ip.address();
+
     temporaryStorage.mails.forEach((mail,index) => {
         mailAddress = mail.address;
+        codeUri = encodeURIComponent(temporaryStorage.codes[index]);
+        link = `http://${localAddress}:3000/?code=${codeUri}name=${nameUri}`;
         mailOptions = {
             to: mailAddress,
             subject: mailConfig.message.subject,
