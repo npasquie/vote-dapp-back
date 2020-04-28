@@ -68,7 +68,7 @@ db.once('open', function() {
             if(ballot.length === 0)
                 notFoundAnswer(req,res);
             else
-                res.status(200).json(ballot.address); // send in json
+                res.status(200).json(ballot[0].address); // send in json
         });
     }).get('/*', function (req, res)
     {
