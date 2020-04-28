@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const addrs = require("email-addresses");
 const nodemailer = require('nodemailer');
 const ip = require('ip');
+const fs = require("fs");
 const voteDappUtil = require(
     "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
 const app  = express();
@@ -62,7 +63,7 @@ db.once('open', function() {
     {
         res.sendFile("index.html",{root:root});
     }).get('/api/get-address/:ballotName',function (req, res){
-        ballotName = req.params.ballotName;
+        ballotName = req.params.ballotName; // no need for decode uri
         Ballot.find({ name: ballotName }, (err, ballot) => {
             if (err) return console.error(err);
             if(ballot.length === 0)
@@ -70,13 +71,18 @@ db.once('open', function() {
             else
                 res.status(200).json(ballot[0].address); // send in json
         });
-    }).get('/*', function (req, res)
-    {
+    }).get('/*', function (req, res) {
         accessedFile = req.originalUrl;
-        if(!accessedFile.includes("..")) // for security
-            res.sendFile(accessedFile,{root:root}, () => {
-                // no callback set
-            });
+        if(!accessedFile.includes("..")) /* for security, but doesn't work
+        (dunno why) */
+            if (fs.existsSync((serverIsInProdMode ? root : "")
+                + accessedFile)) {
+                res.sendFile(accessedFile, {root: root}, () => {
+                    // no callback set
+                });
+            } else {
+                res.sendFile("index.html",{root:root});
+            }
         else
             notFoundAnswer(req, res);
     }).post('/api/new-ballot',function (req,res) {
@@ -161,12 +167,12 @@ function sendMails(ballotName) {
     temporaryStorage.mails.forEach((mail,index) => {
         mailAddress = mail.address;
         codeUri = encodeURIComponent(temporaryStorage.codes[index]);
-        link = `http://${localAddress}:3000/?code=${codeUri}name=${nameUri}`;
+        link = `http://${localAddress}:3000/?code=${codeUri}&name=${nameUri}`;
         mailOptions = {
             to: mailAddress,
             subject: mailConfig.message.subject,
             html: `<p>Cher(e) ${mailAddress}</p>` + mailConfig.message.html +
-                `<a>${link}</a>`,
+                `<a href="${link}">scrutin en ligne</a>`,
             text: `Cher(e) ${mail.parts.name} \n` + mailConfig.message.text +
                 `\n ${link}`
         };
