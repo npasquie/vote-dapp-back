@@ -153,27 +153,25 @@ function notFoundAnswer(req,res) {
 function sendMails(ballotName) {
     let mailOptions;
     let mailAddress;
-    console.log("mails :");
-    console.log(temporaryStorage.mails);
+    let codeUri = encodeURIComponent(temporaryStorage.codes[index]);
+    let nameUri = encodeURIComponent(ballotName);
+    let link = `localhost:3000/vote?code=${codeUri}name=${nameUri}`;
     temporaryStorage.mails.forEach((mail,index) => {
         mailAddress = mail.address;
         mailOptions = {
             to: mailAddress,
             subject: mailConfig.message.subject,
-            html: `<p>Cher(e) ${mailAddress}</p>` +
-                mailConfig.message.html +
-                `<a>localhost:3000/vote` +
-                `?code=${temporaryStorage.codes[index]}</a>`,
+            html: `<p>Cher(e) ${mailAddress}</p>` + mailConfig.message.html +
+                `<a>${link}</a>`,
             text: `Cher(e) ${mail.parts.name} \n` + mailConfig.message.text +
-                `\n localhost:3000/vote?code=${temporaryStorage.codes[index]}`+
-                `name=${ballotName}`
+                `\n ${link}`
         };
         transporter.sendMail(mailOptions, (error,info) => {
             if (error)
                 handleError("error from sendMail " +
                     `on ${mailAddress}` + error);
             else
-                console.log("mail sent: " + info.response);
+                console.log(`mail sent to ${mailAddress}: ` + info.response);
         });
     });
 }
