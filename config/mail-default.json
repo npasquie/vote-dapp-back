@@ -4,6 +4,7 @@
   "port": null,
   "secure": true,
   "enableAuth": false,
+  "url": "http://localhost",
   "tls": {
     "rejectUnauthorized": false
   },

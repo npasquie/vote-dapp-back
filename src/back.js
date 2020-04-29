@@ -3,7 +3,6 @@ const express = require("express"); // imports do not work, we use require
 const bodyParser = require('body-parser');
 const addrs = require("email-addresses");
 const nodemailer = require('nodemailer');
-const ip = require('ip');
 const fs = require("fs");
 const voteDappUtil = require(
     "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
@@ -161,21 +160,25 @@ function sendMails(ballotName) {
     let mailAddress;
     let codeUri;
     let link;
+    let linkPort = env.SERVED_ON_PORT === "80" ? "" : `:${env.SERVED_ON_PORT}`;
     let nameUri = encodeURIComponent(ballotName);
-    let localAddress = ip.address();
+    let localAddress = mailConfig.url;
 
     temporaryStorage.mails.forEach((mail,index) => {
         mailAddress = mail.address;
         codeUri = encodeURIComponent(temporaryStorage.codes[index]);
-        link = `http://${localAddress}:3000/?code=${codeUri}&name=${nameUri}`;
+        link = `${localAddress}${linkPort}/` +
+        `?code=${codeUri}&name=${nameUri}`;
         mailOptions = {
             to: mailAddress,
             subject: mailConfig.message.subject,
             html: `<p>Cher(e) ${mailAddress}</p>` + mailConfig.message.html +
-                `<a href="${link}">scrutin en ligne</a>`,
+                `<a href="${link}">lien du scrutin</a>`,
             text: `Cher(e) ${mail.parts.name} \n` + mailConfig.message.text +
                 `\n ${link}`
         };
+        // TODO: remove this
+        console.log(mailOptions);
         transporter.sendMail(mailOptions, (error,info) => {
             if (error)
                 handleError("error from sendMail " +
