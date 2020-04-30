@@ -177,8 +177,6 @@ function sendMails(ballotName) {
             text: `Cher(e) ${mail.parts.name} \n` + mailConfig.message.text +
                 `\n ${link}`
         };
-        // TODO: remove this
-        console.log(mailOptions);
         transporter.sendMail(mailOptions, (error,info) => {
             if (error)
                 handleError("error from sendMail " +
