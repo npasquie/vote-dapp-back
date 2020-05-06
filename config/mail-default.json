@@ -5,6 +5,7 @@
   "secure": true,
   "enableAuth": false,
   "url": "http://localhost",
+  "privateKey": "",
   "tls": {
     "rejectUnauthorized": false
   },

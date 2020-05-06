@@ -18,11 +18,13 @@
   },
   "homepage": "https://github.com/npasquie/vote-dapp-back#readme",
   "dependencies": {
+    "@truffle/hdwallet-provider": "^1.0.34",
     "body-parser": "^1.19.0",
     "email-addresses": "^3.1.0",
     "express": "^4.17.1",
     "mongoose": "^5.9.5",
-    "nodemailer": "^6.4.6"
+    "nodemailer": "^6.4.6",
+    "web3": "^1.2.7"
   },
   "devDependencies": {
     "nodemon": "^2.0.2"

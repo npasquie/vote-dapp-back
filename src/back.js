@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const addrs = require("email-addresses");
 const nodemailer = require('nodemailer');
 const fs = require("fs");
+const web3 = require("web3");
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 const voteDappUtil = require(
     "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
 const app  = express();
@@ -36,6 +38,10 @@ let temporaryStorage = {
     images: null
 };
 
+let web3Instance = new web3(new HDWalletProvider(mailConfig.privateKey,
+    "https://rinkeby.infura.io/v3/7697fcd995504eec91d5e6fd4514aef3"));
+
+
 mongoose.connect(`mongodb://${networkAccess}:
   ${env.MONGO_PORT}/${env.DB_NAME}`,
     {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true},
@@ -58,6 +64,13 @@ db.once('open', function() {
     let Ballot = mongoose.model('Ballot', ballotSchema);
 
     app.use(bodyParser.json());
+    app.use((req, res, next) => { // cors to Infura
+        res.header('Access-Control-Allow-Origin',
+            'https://rinkeby.infura.io/v3/7697fcd995504eec91d5e6fd4514aef3');
+        res.header('Access-Control-Allow-Methods', 'POST,GET,OPTIONS,PUT,DELETE');
+        res.header('Access-Control-Allow-Headers', 'Content-Type,Accept,X-Requested-With');
+        next();
+    });
     app.get('/', function (req, res)
     {
         res.sendFile("index.html",{root:root});
