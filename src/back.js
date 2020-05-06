@@ -6,6 +6,8 @@ const nodemailer = require('nodemailer');
 const fs = require("fs");
 const web3 = require("web3");
 const HDWalletProvider = require("@truffle/hdwallet-provider");
+const ballotInterface = require(
+    "../vote-dapp-front/vote-dapp-contract/build/Ballot");
 const voteDappUtil = require(
     "../vote-dapp-front/vote-dapp-contract/misc/ballot-utils");
 const app  = express();
@@ -40,6 +42,8 @@ let temporaryStorage = {
 
 let web3Instance = new web3(new HDWalletProvider(mailConfig.privateKey,
     "https://rinkeby.infura.io/v3/7697fcd995504eec91d5e6fd4514aef3"));
+let web3Accounts;
+web3Instance.eth.getAccounts().then(res => web3Accounts = res);
 
 
 mongoose.connect(`mongodb://${networkAccess}:
@@ -153,6 +157,20 @@ db.once('open', function() {
             });
             res.status(200).send("OK");
         }
+    }).post('/api/vote', (req, res) => {
+        console.log("vote received");
+        const receivedJson = req.body;
+        const {_address,_code,_vote} = receivedJson;
+        const contract = new web3Instance.eth.Contract(
+            ballotInterface.abi,_address);
+
+        contract.methods.vote(_vote,_code).send({from: web3Accounts[0]})
+            .then(() => {
+            res.status(200).send("OK");
+        }).catch(error => {
+            console.log(error);
+            res.status(502).send(error);
+        });
     }).use(function(req, res) // if no above path is recognized
     {
         notFoundAnswer(req,res);
